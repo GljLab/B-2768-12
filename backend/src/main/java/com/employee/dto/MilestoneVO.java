@@ -1,23 +1,34 @@
 package com.employee.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
-public class BirthdayPartyRequest {
+public class MilestoneVO {
 
-    @NotBlank
+    private Long partyId;
+
     private String theme;
-    @NotNull
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime eventTime;
-    @NotBlank
+
+    private Integer partyYear;
+
+    private Integer partyMonth;
+
     private String location;
-    private String flow;
-    private String coverImage;
+
     private String highlights;
+
+    private Integer checkedInCount;
+
+    private Integer confirmedCount;
+
+    private Integer totalParticipantCount;
+
+    private List<String> topPhotos;
 }

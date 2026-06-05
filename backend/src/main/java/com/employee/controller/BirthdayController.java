@@ -2,17 +2,14 @@ package com.employee.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.employee.common.Result;
-import com.employee.dto.BirthdayPartyVO;
-import com.employee.dto.BirthdayProfileVO;
-import com.employee.dto.BirthdayWishRequest;
-import com.employee.dto.BirthdayWishVO;
-import com.employee.dto.PartyParticipationRequest;
+import com.employee.dto.*;
 import com.employee.entity.BirthdayPartyParticipant;
 import com.employee.entity.BirthdayWish;
 import com.employee.mapper.BirthdayPartyParticipantMapper;
 import com.employee.mapper.BirthdayWishMapper;
 import com.employee.service.BirthdayMessageService;
 import com.employee.service.BirthdayPartyService;
+import com.employee.service.BirthdayTimelineService;
 import com.employee.service.BirthdayWishService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,6 +30,7 @@ public class BirthdayController {
     private final BirthdayWishService wishService;
     private final BirthdayPartyService partyService;
     private final BirthdayMessageService messageService;
+    private final BirthdayTimelineService timelineService;
     private final BirthdayWishMapper wishMapper;
     private final BirthdayPartyParticipantMapper participantMapper;
 
@@ -191,6 +189,38 @@ public class BirthdayController {
         Long totalPartyCount = participantMapper.selectCount(totalPartyWrapper);
         profile.setTotalParties(totalPartyCount.intValue());
 
+        profile.setGrowthData(timelineService.getGrowthData(currentEmployeeId));
+        profile.setTimeline(timelineService.getTimeline(currentEmployeeId, currentEmployeeId, false));
+
         return Result.success(profile);
+    }
+
+    @GetMapping("/timeline")
+    @Operation(summary = "我的生日时间轴")
+    public Result<?> getTimeline(HttpServletRequest request) {
+        Long currentEmployeeId = (Long) request.getAttribute("employeeId");
+        return Result.success(timelineService.getTimeline(currentEmployeeId, currentEmployeeId, false));
+    }
+
+    @GetMapping("/growth-data")
+    @Operation(summary = "我的成长数据")
+    public Result<?> getGrowthData(HttpServletRequest request) {
+        Long currentEmployeeId = (Long) request.getAttribute("employeeId");
+        return Result.success(timelineService.getGrowthData(currentEmployeeId));
+    }
+
+    @PostMapping("/yearly-message")
+    @Operation(summary = "保存我的年度寄语")
+    public Result<?> saveYearlyMessage(@Valid @RequestBody YearlyMessageRequest request,
+                                       HttpServletRequest httpRequest) {
+        Long currentEmployeeId = (Long) httpRequest.getAttribute("employeeId");
+        return timelineService.saveEmployeeMessage(currentEmployeeId, request.getYear(), request.getContent());
+    }
+
+    @GetMapping("/poster")
+    @Operation(summary = "获取纪念海报数据")
+    public Result<?> getPosterData(HttpServletRequest request) {
+        Long currentEmployeeId = (Long) request.getAttribute("employeeId");
+        return Result.success(timelineService.getPosterData(currentEmployeeId));
     }
 }

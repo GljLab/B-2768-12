@@ -23,6 +23,7 @@ public class BirthdayPartyVO {
     private Integer participantCount;
     private Integer attendCount;
     private Integer photoCount;
+    private String highlights;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime createdAt;
 }

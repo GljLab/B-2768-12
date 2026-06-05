@@ -13,6 +13,7 @@ import {
   FormOutlined,
   MessageOutlined,
   InboxOutlined,
+  HistoryOutlined,
   GiftOutlined,
   HeartOutlined,
   TrophyOutlined
@@ -142,6 +143,12 @@ const menuConfig = [
         key: 'birthday-statistics',
         label: '生日统计',
         path: '/birthday-statistics',
+        roles: ['admin']
+      },
+      {
+        key: 'birthday-milestones',
+        label: '生日大事记',
+        path: '/birthday-milestones',
         roles: ['admin']
       }
     ]

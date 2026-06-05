@@ -136,6 +136,42 @@
         </a-card>
       </a-col>
     </a-row>
+
+    <a-card :bordered="false" class="growth-stats-card" style="margin-top: 16px">
+      <template #title>📈 成长记录统计</template>
+      <a-row :gutter="[16, 16]">
+        <a-col :span="6">
+          <div class="growth-stat-item">
+            <div class="growth-stat-value">{{ empMsgRate }}</div>
+            <div class="growth-stat-label">员工寄语完成率</div>
+          </div>
+        </a-col>
+        <a-col :span="6">
+          <div class="growth-stat-item">
+            <div class="growth-stat-value">{{ adminMsgRate }}</div>
+            <div class="growth-stat-label">管理员寄语覆盖率</div>
+          </div>
+        </a-col>
+        <a-col :span="12">
+          <div ref="trendChartRef" class="chart"></div>
+        </a-col>
+      </a-row>
+    </a-card>
+
+    <a-card :bordered="false" class="rank-card" style="margin-top: 16px">
+      <template #title>🏆 最活跃的生日会 TOP5</template>
+      <div class="top-party-list">
+        <div v-for="(party, index) in statistics.topActiveParties" :key="party.id" class="top-party-item">
+          <span class="rank-number" :class="{ 'rank-top': index < 3 }">{{ index + 1 }}</span>
+          <div class="top-party-info">
+            <div class="top-party-name">{{ party.theme }}</div>
+            <div class="top-party-meta">{{ formatPartyDate(party.eventTime) }}</div>
+          </div>
+          <div class="top-party-count">{{ party.checkinCount }}人签到</div>
+        </div>
+        <a-empty v-if="!statistics.topActiveParties?.length" description="暂无数据" />
+      </div>
+    </a-card>
   </div>
 </template>
 
@@ -146,6 +182,7 @@ import {
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import * as echarts from 'echarts'
+import dayjs from 'dayjs'
 import { getStatistics, exportBirthdayEmployees, exportWishReport } from '@/api/birthday'
 
 const warmColors = [
@@ -156,8 +193,10 @@ const warmColors = [
 
 const barChartRef = ref(null)
 const pieChartRef = ref(null)
+const trendChartRef = ref(null)
 let barChart = null
 let pieChart = null
+let trendChart = null
 
 const statistics = ref({
   birthdayDistribution: [],
@@ -166,7 +205,11 @@ const statistics = ref({
   activeWishers: [],
   popularStars: [],
   yearPartyCount: 0,
-  avgParticipationRate: 0
+  avgParticipationRate: 0,
+  employeeMessageRate: 0,
+  adminMessageCoverageRate: 0,
+  participationRateTrend: [],
+  topActiveParties: []
 })
 
 const exportMonth = ref(new Date().getMonth() + 1)
@@ -194,6 +237,23 @@ const participationRate = computed(() => {
   return (rate * 100).toFixed(1) + '%'
 })
 
+const empMsgRate = computed(() => {
+  const rate = statistics.value.employeeMessageRate
+  if (rate == null) return '0%'
+  return (rate * 100).toFixed(1) + '%'
+})
+
+const adminMsgRate = computed(() => {
+  const rate = statistics.value.adminMessageCoverageRate
+  if (rate == null) return '0%'
+  return (rate * 100).toFixed(1) + '%'
+})
+
+const formatPartyDate = (date) => {
+  if (!date) return '-'
+  return dayjs(date).format('YYYY-MM-DD')
+}
+
 const wisherPercent = (count) => {
   const max = Math.max(...(statistics.value.activeWishers?.map(i => i.count) || [1]), 1)
   return Math.round((count / max) * 100)
@@ -218,6 +278,7 @@ const fetchData = async () => {
 const renderCharts = () => {
   renderBarChart()
   renderPieChart()
+  renderTrendChart()
 }
 
 const renderBarChart = () => {
@@ -327,6 +388,36 @@ const renderPieChart = () => {
   pieChart.setOption(option)
 }
 
+const renderTrendChart = () => {
+  if (!trendChartRef.value) return
+  if (!trendChart) {
+    trendChart = echarts.init(trendChartRef.value)
+  }
+
+  const trend = statistics.value.participationRateTrend || []
+  const years = trend.map(t => t.year + '年')
+  const rates = trend.map(t => ((t.rate || 0) * 100).toFixed(1))
+
+  const option = {
+    title: { text: '生日会参与率趋势', textStyle: { fontSize: 14, fontWeight: 500 } },
+    tooltip: { trigger: 'axis', formatter: '{b}: {c}%' },
+    grid: { left: '3%', right: '4%', bottom: '3%', top: 40, containLabel: true },
+    xAxis: { type: 'category', data: years, axisLine: { lineStyle: { color: '#e8e8e8' } } },
+    yAxis: { type: 'value', axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { type: 'dashed', color: '#e8e8e8' } }, axisLabel: { formatter: '{value}%' } },
+    series: [{
+      name: '参与率',
+      type: 'line',
+      data: rates,
+      smooth: true,
+      lineStyle: { color: '#fa8c16', width: 3 },
+      areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(250,140,22,0.3)' }, { offset: 1, color: 'rgba(250,140,22,0.05)' }]) },
+      itemStyle: { color: '#fa8c16' }
+    }]
+  }
+
+  trendChart.setOption(option)
+}
+
 const downloadBlob = (blob, filename) => {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -369,6 +460,7 @@ const handleExportWishReport = async () => {
 const handleResize = () => {
   barChart?.resize()
   pieChart?.resize()
+  trendChart?.resize()
 }
 
 onMounted(() => {
@@ -380,6 +472,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
   barChart?.dispose()
   pieChart?.dispose()
+  trendChart?.dispose()
 })
 </script>
 
@@ -535,5 +628,74 @@ onUnmounted(() => {
   font-size: 14px;
   color: #374151;
   min-width: 180px;
+}
+
+.growth-stats-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.growth-stat-item {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #fff7e6 0%, #fffbf0 100%);
+  border-radius: 12px;
+}
+
+.growth-stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #fa8c16;
+  line-height: 1.2;
+}
+
+.growth-stat-label {
+  font-size: 13px;
+  color: #8c8c8c;
+  margin-top: 6px;
+}
+
+.top-party-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.top-party-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.top-party-item:last-child {
+  border-bottom: none;
+}
+
+.top-party-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.top-party-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-party-meta {
+  font-size: 12px;
+  color: #8c8c8c;
+  margin-top: 2px;
+}
+
+.top-party-count {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fa8c16;
+  flex-shrink: 0;
 }
 </style>

@@ -491,6 +491,34 @@ CREATE TABLE IF NOT EXISTS birthday_party_photo (
     INDEX idx_uploaded_by (uploaded_by)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='生日会照片表';
 
+ALTER TABLE birthday_party ADD COLUMN highlights VARCHAR(100) DEFAULT NULL COMMENT '活动亮点';
+
+CREATE TABLE IF NOT EXISTS birthday_yearly_message (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '寄语ID',
+    employee_id BIGINT NOT NULL COMMENT '员工ID',
+    year INT NOT NULL COMMENT '年份',
+    content VARCHAR(200) NOT NULL COMMENT '寄语内容',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY uk_employee_year (employee_id, year),
+    INDEX idx_employee_id (employee_id),
+    INDEX idx_year (year)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='员工年度生日寄语表';
+
+CREATE TABLE IF NOT EXISTS birthday_admin_message (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '管理员寄语ID',
+    employee_id BIGINT NOT NULL COMMENT '员工ID',
+    admin_id BIGINT NOT NULL COMMENT '管理员ID',
+    admin_name VARCHAR(50) COMMENT '管理员姓名',
+    year INT NOT NULL COMMENT '年份',
+    content VARCHAR(500) NOT NULL COMMENT '寄语内容',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX idx_employee_id (employee_id),
+    INDEX idx_admin_id (admin_id),
+    INDEX idx_year (year)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理员年度生日寄语表';
+
 CREATE TABLE IF NOT EXISTS birthday_party_photo_like (
     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '照片点赞ID',
     photo_id BIGINT NOT NULL COMMENT '照片ID',

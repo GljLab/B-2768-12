@@ -232,3 +232,77 @@ export function uploadPartyPhoto(file) {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
+
+export function getTimeline() {
+  return request({
+    url: '/employee/birthday/timeline',
+    method: 'get'
+  })
+}
+
+export function getGrowthData() {
+  return request({
+    url: '/employee/birthday/growth-data',
+    method: 'get'
+  })
+}
+
+export function saveYearlyMessage(data) {
+  return request({
+    url: '/employee/birthday/yearly-message',
+    method: 'post',
+    data
+  })
+}
+
+export function getPosterData() {
+  return request({
+    url: '/employee/birthday/poster',
+    method: 'get'
+  })
+}
+
+export function getAdminTimeline(employeeId) {
+  return request({
+    url: `/admin/birthday/timeline/${employeeId}`,
+    method: 'get'
+  })
+}
+
+export function saveAdminMessage(data) {
+  return request({
+    url: '/admin/birthday/admin-message',
+    method: 'post',
+    data
+  })
+}
+
+export function updateAdminMessage(messageId, data) {
+  return request({
+    url: `/admin/birthday/admin-message/${messageId}`,
+    method: 'put',
+    data
+  })
+}
+
+export function deleteAdminMessage(messageId) {
+  return request({
+    url: `/admin/birthday/admin-message/${messageId}`,
+    method: 'delete'
+  })
+}
+
+export function getMilestones(params) {
+  return request({
+    url: '/admin/birthday/milestones',
+    method: 'get',
+    params
+  })
+}
+
+export function getAdminPosterData(employeeId) {
+  return request({
+    url: `/admin/birthday/poster/${employeeId}`,
+    method: 'get'
+  })
+}

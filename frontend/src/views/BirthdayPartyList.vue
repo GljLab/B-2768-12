@@ -130,6 +130,16 @@
           />
         </a-form-item>
 
+        <a-form-item label="活动亮点">
+          <a-textarea
+            v-model:value="createForm.highlights"
+            placeholder="请输入活动亮点描述（100字以内）"
+            :rows="2"
+            maxlength="100"
+            show-count
+          />
+        </a-form-item>
+
         <a-form-item label="封面图片">
           <a-upload
             list-type="picture-card"
@@ -364,6 +374,7 @@ const handleCreateParty = async () => {
       eventTime: createForm.eventTime.format('YYYY-MM-DD HH:mm'),
       location: createForm.location,
       flow: createForm.flow,
+      highlights: createForm.highlights,
       coverImage: createForm.coverImage
     })
     message.success('生日会发起成功')

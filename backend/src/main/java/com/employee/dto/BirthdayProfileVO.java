@@ -11,4 +11,6 @@ public class BirthdayProfileVO {
     private Integer totalParties;
     private List<BirthdayWishVO> yearWishes;
     private List<BirthdayPartyVO> parties;
+    private GrowthDataVO growthData;
+    private List<TimelineYearVO> timeline;
 }

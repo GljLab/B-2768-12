@@ -26,6 +26,7 @@ import BirthdayPartyList from '@/views/BirthdayPartyList.vue'
 import BirthdayPartyDetail from '@/views/BirthdayPartyDetail.vue'
 import BirthdayProfile from '@/views/BirthdayProfile.vue'
 import BirthdayStatistics from '@/views/BirthdayStatistics.vue'
+import BirthdayMilestones from '@/views/BirthdayMilestones.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -198,6 +199,12 @@ const router = createRouter({
           path: 'birthday-statistics',
           name: 'BirthdayStatistics',
           component: BirthdayStatistics,
+          meta: { requiresAuth: true, role: 'admin' }
+        },
+        {
+          path: 'birthday-milestones',
+          name: 'BirthdayMilestones',
+          component: BirthdayMilestones,
           meta: { requiresAuth: true, role: 'admin' }
         }
       ]

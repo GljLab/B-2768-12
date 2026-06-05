@@ -45,6 +45,7 @@ public class BirthdayPartyService {
         party.setEventTime(request.getEventTime());
         party.setLocation(request.getLocation());
         party.setFlow(request.getFlow());
+        party.setHighlights(request.getHighlights());
         party.setCoverImage(request.getCoverImage());
         party.setCreatedBy(adminId);
         party.setStatus(0);
@@ -101,6 +102,7 @@ public class BirthdayPartyService {
         vo.setEventTime(party.getEventTime());
         vo.setLocation(party.getLocation());
         vo.setFlow(party.getFlow());
+        vo.setHighlights(party.getHighlights());
         vo.setCoverImage(party.getCoverImage());
         vo.setCreatedBy(party.getCreatedBy());
         vo.setStatus(party.getStatus());
@@ -143,6 +145,7 @@ public class BirthdayPartyService {
             vo.setEventTime(party.getEventTime());
             vo.setLocation(party.getLocation());
             vo.setFlow(party.getFlow());
+            vo.setHighlights(party.getHighlights());
             vo.setCoverImage(party.getCoverImage());
             vo.setCreatedBy(party.getCreatedBy());
             vo.setStatus(party.getStatus());

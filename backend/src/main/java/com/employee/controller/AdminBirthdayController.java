@@ -1,10 +1,7 @@
 package com.employee.controller;
 
 import com.employee.common.Result;
-import com.employee.dto.BirthdayPartyRequest;
-import com.employee.dto.BirthdayProfileVO;
-import com.employee.dto.BirthdayWishRequest;
-import com.employee.dto.CheckinRequest;
+import com.employee.dto.*;
 import com.employee.entity.AdminUser;
 import com.employee.entity.Employee;
 import com.employee.mapper.AdminUserMapper;
@@ -13,8 +10,10 @@ import com.employee.mapper.BirthdayPartyParticipantMapper;
 import com.employee.mapper.BirthdayWishMapper;
 import com.employee.mapper.EmployeeMapper;
 import com.employee.service.BirthdayMessageService;
+import com.employee.service.BirthdayMilestoneService;
 import com.employee.service.BirthdayPartyService;
 import com.employee.service.BirthdayStatisticsService;
+import com.employee.service.BirthdayTimelineService;
 import com.employee.service.BirthdayWishService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,6 +37,8 @@ public class AdminBirthdayController {
     private final BirthdayPartyService partyService;
     private final BirthdayMessageService messageService;
     private final BirthdayStatisticsService statisticsService;
+    private final BirthdayTimelineService timelineService;
+    private final BirthdayMilestoneService milestoneService;
     private final BirthdayWishMapper wishMapper;
     private final BirthdayPartyParticipantMapper participantMapper;
     private final BirthdayPartyMapper partyMapper;
@@ -217,12 +218,62 @@ public class AdminBirthdayController {
 
     @GetMapping("/profile/{employeeId}")
     @Operation(summary = "查看员工生日档案")
-    public Result<?> getEmployeeBirthdayProfile(@PathVariable Long employeeId) {
+    public Result<?> getEmployeeBirthdayProfile(@PathVariable Long employeeId, HttpServletRequest request) {
+        Long adminId = getUserId(request);
         BirthdayProfileVO vo = new BirthdayProfileVO();
         vo.setYearWishes(wishService.getWishesForEmployee(employeeId, employeeId));
         vo.setTotalWishes(vo.getYearWishes().size());
         vo.setParties(partyService.getPartyList(null, null));
         vo.setTotalParties(vo.getParties().size());
+        vo.setGrowthData(timelineService.getGrowthData(employeeId));
+        vo.setTimeline(timelineService.getTimeline(employeeId, adminId, true));
         return Result.success(vo);
+    }
+
+    @GetMapping("/timeline/{employeeId}")
+    @Operation(summary = "查看员工生日时间轴")
+    public Result<?> getEmployeeTimeline(@PathVariable Long employeeId, HttpServletRequest request) {
+        Long adminId = getUserId(request);
+        return Result.success(timelineService.getTimeline(employeeId, adminId, true));
+    }
+
+    @PostMapping("/admin-message")
+    @Operation(summary = "写管理员寄语")
+    public Result<?> saveAdminMessage(@Valid @RequestBody AdminMessageRequest request,
+                                      HttpServletRequest httpRequest) {
+        Long adminId = getUserId(httpRequest);
+        String adminName = getUserName(httpRequest);
+        return timelineService.saveAdminMessage(adminId, adminName, request.getEmployeeId(),
+                request.getYear(), request.getContent());
+    }
+
+    @PutMapping("/admin-message/{messageId}")
+    @Operation(summary = "修改管理员寄语")
+    public Result<?> updateAdminMessage(@PathVariable Long messageId,
+                                        @RequestBody AdminMessageRequest request,
+                                        HttpServletRequest httpRequest) {
+        Long adminId = getUserId(httpRequest);
+        return timelineService.updateAdminMessage(messageId, adminId, request.getContent());
+    }
+
+    @DeleteMapping("/admin-message/{messageId}")
+    @Operation(summary = "删除管理员寄语")
+    public Result<?> deleteAdminMessage(@PathVariable Long messageId, HttpServletRequest httpRequest) {
+        Long adminId = getUserId(httpRequest);
+        return timelineService.deleteAdminMessage(messageId, adminId);
+    }
+
+    @GetMapping("/milestones")
+    @Operation(summary = "生日大事记")
+    public Result<?> getMilestones(@RequestParam(required = false) Integer year,
+                                   @RequestParam(required = false) Integer month,
+                                   @RequestParam(required = false) String keyword) {
+        return Result.success(milestoneService.getMilestones(year, month, keyword));
+    }
+
+    @GetMapping("/poster/{employeeId}")
+    @Operation(summary = "获取员工纪念海报数据")
+    public Result<?> getEmployeePosterData(@PathVariable Long employeeId) {
+        return Result.success(timelineService.getPosterData(employeeId));
     }
 }

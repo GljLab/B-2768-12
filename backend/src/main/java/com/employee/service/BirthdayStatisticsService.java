@@ -6,10 +6,14 @@ import com.employee.entity.BirthdayParty;
 import com.employee.entity.BirthdayPartyParticipant;
 import com.employee.entity.BirthdayWish;
 import com.employee.entity.Employee;
+import com.employee.entity.BirthdayYearlyMessage;
+import com.employee.entity.BirthdayAdminMessage;
 import com.employee.mapper.BirthdayPartyMapper;
 import com.employee.mapper.BirthdayPartyParticipantMapper;
 import com.employee.mapper.BirthdayWishMapper;
 import com.employee.mapper.EmployeeMapper;
+import com.employee.mapper.BirthdayYearlyMessageMapper;
+import com.employee.mapper.BirthdayAdminMessageMapper;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -33,6 +37,8 @@ public class BirthdayStatisticsService {
     private final BirthdayWishMapper wishMapper;
     private final BirthdayPartyMapper partyMapper;
     private final BirthdayPartyParticipantMapper participantMapper;
+    private final BirthdayYearlyMessageMapper yearlyMessageMapper;
+    private final BirthdayAdminMessageMapper adminMessageMapper;
 
     public BirthdayStatisticsVO getStatistics() {
         int currentYear = LocalDate.now().getYear();
@@ -137,6 +143,68 @@ public class BirthdayStatisticsService {
         }
         double avgRate = totalParticipants > 0 ? (double) confirmedParticipants / totalParticipants : 0.0;
         vo.setAvgParticipationRate(avgRate);
+
+        QueryWrapper<Employee> allEmpQw = new QueryWrapper<>();
+        allEmpQw.eq("status", 1);
+        Long totalEmployees = employeeMapper.selectCount(allEmpQw);
+
+        QueryWrapper<BirthdayYearlyMessage> msgQw = new QueryWrapper<>();
+        msgQw.apply("year = {0}", currentYear);
+        List<BirthdayYearlyMessage> yearlyMessages = yearlyMessageMapper.selectList(msgQw);
+        long employeesWithMessage = yearlyMessages.stream()
+                .map(BirthdayYearlyMessage::getEmployeeId)
+                .distinct()
+                .count();
+        double empMsgRate = totalEmployees > 0 ? (double) employeesWithMessage / totalEmployees : 0.0;
+        vo.setEmployeeMessageRate(empMsgRate);
+
+        QueryWrapper<BirthdayAdminMessage> adminMsgQw = new QueryWrapper<>();
+        adminMsgQw.apply("year = {0}", currentYear);
+        List<BirthdayAdminMessage> adminMessages = adminMessageMapper.selectList(adminMsgQw);
+        long employeesWithAdminMsg = adminMessages.stream()
+                .map(BirthdayAdminMessage::getEmployeeId)
+                .distinct()
+                .count();
+        double adminMsgRate = totalEmployees > 0 ? (double) employeesWithAdminMsg / totalEmployees : 0.0;
+        vo.setAdminMessageCoverageRate(adminMsgRate);
+
+        List<BirthdayStatisticsVO.ParticipationRateVO> rateTrend = new ArrayList<>();
+        for (int y = currentYear - 4; y <= currentYear; y++) {
+            QueryWrapper<BirthdayParty> ypQw = new QueryWrapper<>();
+            ypQw.eq("party_year", y);
+            List<BirthdayParty> ypList = partyMapper.selectList(ypQw);
+            long yTotal = 0, yConfirmed = 0;
+            for (BirthdayParty p : ypList) {
+                QueryWrapper<BirthdayPartyParticipant> ppQw = new QueryWrapper<>();
+                ppQw.eq("party_id", p.getId());
+                List<BirthdayPartyParticipant> ppList = participantMapper.selectList(ppQw);
+                yTotal += ppList.size();
+                yConfirmed += ppList.stream().filter(pp -> pp.getParticipationStatus() != null && pp.getParticipationStatus() == 1).count();
+            }
+            BirthdayStatisticsVO.ParticipationRateVO rateVO = new BirthdayStatisticsVO.ParticipationRateVO();
+            rateVO.setYear(y);
+            rateVO.setRate(yTotal > 0 ? (double) yConfirmed / yTotal : 0.0);
+            rateTrend.add(rateVO);
+        }
+        vo.setParticipationRateTrend(rateTrend);
+
+        QueryWrapper<BirthdayParty> endedPartyQw = new QueryWrapper<>();
+        endedPartyQw.eq("status", 2).orderByDesc("event_time");
+        List<BirthdayParty> endedParties = partyMapper.selectList(endedPartyQw);
+        List<BirthdayStatisticsVO.ActivePartyVO> topParties = new ArrayList<>();
+        for (BirthdayParty p : endedParties) {
+            QueryWrapper<BirthdayPartyParticipant> ppQw = new QueryWrapper<>();
+            ppQw.eq("party_id", p.getId()).eq("checkin_status", 1);
+            Long checkinCount = participantMapper.selectCount(ppQw);
+            BirthdayStatisticsVO.ActivePartyVO ap = new BirthdayStatisticsVO.ActivePartyVO();
+            ap.setId(p.getId());
+            ap.setTheme(p.getTheme());
+            ap.setCheckinCount(checkinCount.intValue());
+            ap.setEventTime(p.getEventTime());
+            topParties.add(ap);
+        }
+        topParties.sort((a, b) -> b.getCheckinCount() - a.getCheckinCount());
+        vo.setTopActiveParties(topParties.stream().limit(5).collect(Collectors.toList()));
 
         return vo;
     }

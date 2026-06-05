@@ -87,6 +87,13 @@
 
       <a-divider style="margin: 16px 0" />
 
+      <div v-if="isAdmin" class="admin-message-area" style="margin-bottom: 16px">
+        <a-button type="dashed" block @click="showAdminMsgModal = true">
+          <template #icon><EditOutlined /></template>
+          写生日寄语
+        </a-button>
+      </div>
+
       <div class="wish-list-header">
         <span>祝福墙</span>
         <span class="wish-count">{{ wishes.length }} 条祝福</span>
@@ -127,17 +134,31 @@
         </div>
       </a-spin>
     </a-modal>
+
+    <a-modal v-model:open="showAdminMsgModal" title="写生日寄语" @ok="handleSaveAdminMsg" :confirm-loading="savingAdminMsg">
+      <a-form layout="vertical">
+        <a-form-item label="选择年份">
+          <a-select v-model:value="adminMsgYear" style="width: 100%">
+            <a-select-option v-for="y in adminMsgYearOptions" :key="y" :value="y">{{ y }}年</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item label="寄语内容">
+          <a-textarea v-model:value="adminMsgContent" :maxlength="500" show-count :rows="4" placeholder="写下你的寄语..." />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import {
   LeftOutlined,
   RightOutlined,
   HeartOutlined,
-  HeartFilled
+  HeartFilled,
+  EditOutlined
 } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -149,7 +170,8 @@ import {
   getWishes,
   sendWish,
   likeWish,
-  unlikeWish
+  unlikeWish,
+  saveAdminMessage
 } from '@/api/birthday'
 
 dayjs.extend(relativeTime)
@@ -168,6 +190,17 @@ const wishes = ref([])
 const loadingWishes = ref(false)
 const wishContent = ref('')
 const sendingWish = ref(false)
+const isAdmin = computed(() => userStore.isAdmin?.() || userStore.role === 'admin')
+const showAdminMsgModal = ref(false)
+const adminMsgYear = ref(new Date().getFullYear())
+const adminMsgContent = ref('')
+const savingAdminMsg = ref(false)
+const adminMsgYearOptions = computed(() => {
+  const current = new Date().getFullYear()
+  const years = []
+  for (let y = current; y >= current - 10; y--) years.push(y)
+  return years
+})
 
 const AVATAR_COLORS = [
   '#f56a00', '#7265e6', '#ffbf00', '#00a2ae',
@@ -302,6 +335,26 @@ const toggleLike = async (wish) => {
   } catch (error) {
     console.error('操作失败:', error)
     message.error('操作失败')
+  }
+}
+
+const handleSaveAdminMsg = async () => {
+  if (!selectedEmployee.value) return
+  if (!adminMsgContent.value.trim()) { message.warning('请输入寄语内容'); return }
+  savingAdminMsg.value = true
+  try {
+    await saveAdminMessage({
+      employeeId: selectedEmployee.value.id,
+      year: adminMsgYear.value,
+      content: adminMsgContent.value
+    })
+    message.success('寄语发送成功')
+    showAdminMsgModal.value = false
+    adminMsgContent.value = ''
+  } catch (e) {
+    message.error('寄语发送失败')
+  } finally {
+    savingAdminMsg.value = false
   }
 }
 

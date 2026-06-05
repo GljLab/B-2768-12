@@ -27,6 +27,8 @@ public class BirthdayParty {
 
     private String flow;
 
+    private String highlights;
+
     private String coverImage;
 
     private Integer status;
