@@ -17,8 +17,8 @@ export function getAdminBirthdayWall(params) {
 }
 
 export function getWishes(recipientId) {
-  const userStore = JSON.parse(localStorage.getItem('role') || '""')
-  const baseUrl = userStore === 'admin' ? '/admin/birthday' : '/employee/birthday'
+  const role = localStorage.getItem('role')
+  const baseUrl = role === 'admin' ? '/admin/birthday' : '/employee/birthday'
   return request({
     url: `${baseUrl}/wishes/${recipientId}`,
     method: 'get'

@@ -8,6 +8,7 @@ import com.employee.mapper.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -174,6 +175,15 @@ public class BirthdayPartyService {
             return Result.error("未找到参与记录");
         }
 
+        if (participant.getCheckinStatus() != null && participant.getCheckinStatus() == 1) {
+            return Result.error("已签到的员工不允许修改参与状态");
+        }
+
+        BirthdayParty party = partyMapper.selectById(partyId);
+        if (party != null && party.getStatus() != null && party.getStatus() == 2) {
+            return Result.error("活动已结束，不允许修改参与状态");
+        }
+
         participant.setParticipationStatus(request.getParticipationStatus());
         participant.setRemark(request.getRemark());
         participantMapper.updateById(participant);
@@ -202,12 +212,23 @@ public class BirthdayPartyService {
     }
 
     public Result<?> checkin(CheckinRequest request) {
+        BirthdayParty party = partyMapper.selectById(request.getPartyId());
+        if (party == null) {
+            return Result.error("生日会不存在");
+        }
+
+        LocalDate eventDate = party.getEventTime().toLocalDate();
+        LocalDate today = LocalDate.now();
+        if (!today.equals(eventDate)) {
+            return Result.error("只能在活动当天进行签到");
+        }
+
         for (Long employeeId : request.getEmployeeIds()) {
             QueryWrapper<BirthdayPartyParticipant> qw = new QueryWrapper<>();
             qw.eq("party_id", request.getPartyId()).eq("employee_id", employeeId);
             BirthdayPartyParticipant participant = participantMapper.selectOne(qw);
 
-            if (participant != null) {
+            if (participant != null && participant.getCheckinStatus() != null && participant.getCheckinStatus() != 1) {
                 participant.setCheckinStatus(1);
                 participant.setCheckinTime(LocalDateTime.now());
                 participantMapper.updateById(participant);

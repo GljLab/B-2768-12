@@ -340,7 +340,8 @@ const handleExportEmployees = async () => {
   exportEmployeeLoading.value = true
   try {
     const res = await exportBirthdayEmployees(exportMonth.value)
-    downloadBlob(res.data, `生日员工名单_${exportMonth.value}月.xlsx`)
+    const blob = res.data || res
+    downloadBlob(blob, `生日员工名单_${exportMonth.value}月.xlsx`)
     message.success('导出成功')
   } catch (error) {
     console.error('导出失败:', error)
@@ -354,7 +355,8 @@ const handleExportWishReport = async () => {
   exportWishLoading.value = true
   try {
     const res = await exportWishReport(exportYear.value)
-    downloadBlob(res.data, `祝福互动报表_${exportYear.value}年.xlsx`)
+    const blob = res.data || res
+    downloadBlob(blob, `祝福互动报表_${exportYear.value}年.xlsx`)
     message.success('导出成功')
   } catch (error) {
     console.error('导出失败:', error)
